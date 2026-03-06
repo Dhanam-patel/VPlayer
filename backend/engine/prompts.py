@@ -198,10 +198,10 @@ Rules:
 """
 
 OPTIMIZER_HUMAN = """\
-Analyse all the data below and provide specific optimization suggestions.
+Review all the data below and provide specific recommendations for the creator.
 
-Episode Plan:
-{episodes_json}
+Episode Scripts:
+{scripts_json}
 
 Emotional Arc Analysis:
 {emotional_arc_json}
@@ -212,8 +212,9 @@ Retention Risk Analysis:
 Cliffhanger Scores:
 {cliffhanger_json}
 
-Provide prioritized, actionable suggestions to improve engagement, retention, and \
-series completion rate. Include an overall quality score and predicted score after optimization.
+Provide prioritized, actionable recommendations the creator can use to improve engagement, \
+retention, and series completion rate. Include an overall quality score and predicted score \
+if recommendations are applied.
 """
 
 # ---------------------------------------------------------------------------
