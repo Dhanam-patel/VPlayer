@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const [tone, setTone] = useState("Dark, Suspenseful");
   const [target_audience, setTargetAudience] = useState("18-34 streaming audience");
   const [episode_count_preference, setEpisodeCountPreference] = useState(6);
-  const [max_revisions, setMaxRevisions] = useState(3);
+  const [max_revisions, setMaxRevisions] = useState(2);
 
   const {
     isStreaming,

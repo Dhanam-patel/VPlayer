@@ -1,11 +1,10 @@
-import { useRef, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Download, Eye, Flame, Loader2, Sparkles, Zap } from "lucide-react";
-import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import EpisodeTimeline from "./EpisodeTimeline";
 import EpisodeScripts from "./EpisodeScripts";
 import OptimizationReport from "./OptimizationReport";
+import generateStoryPdf from "../utils/generateStoryPdf";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -242,103 +241,19 @@ function CliffhangerPanel({ cliffhangerAnalysis = {} }) {
 }
 
 export default function ResultsDashboard({ analysisData }) {
-  const contentRef = useRef(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const handleDownloadPdf = useCallback(async () => {
-    const element = contentRef.current;
-    if (!element) return;
-
+    if (!analysisData) return;
     setIsGeneratingPdf(true);
     try {
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#020617",
-        logging: false,
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-
-      // A4 dimensions in points (portrait)
-      const pdfWidth = 595.28;
-      const pdfHeight = 841.89;
-      const margin = 20;
-      const contentWidth = pdfWidth - margin * 2;
-      const contentHeight = pdfHeight - margin * 2;
-
-      // Scale image to fit page width
-      const ratio = contentWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
-
-      const pdf = new jsPDF("p", "pt", "a4");
-      let yOffset = 0;
-      let page = 0;
-
-      while (yOffset < scaledHeight) {
-        if (page > 0) {
-          pdf.addPage();
-        }
-
-        // Calculate source slice from the canvas
-        const sourceY = yOffset / ratio;
-        const sourceSliceHeight = Math.min(
-          contentHeight / ratio,
-          imgHeight - sourceY
-        );
-
-        // Create a slice canvas for this page
-        const sliceCanvas = document.createElement("canvas");
-        sliceCanvas.width = imgWidth;
-        sliceCanvas.height = Math.ceil(sourceSliceHeight);
-        const sliceCtx = sliceCanvas.getContext("2d");
-
-        // Fill background
-        sliceCtx.fillStyle = "#020617";
-        sliceCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
-
-        // Draw the slice
-        sliceCtx.drawImage(
-          canvas,
-          0,
-          Math.floor(sourceY),
-          imgWidth,
-          Math.ceil(sourceSliceHeight),
-          0,
-          0,
-          imgWidth,
-          Math.ceil(sourceSliceHeight)
-        );
-
-        const sliceData = sliceCanvas.toDataURL("image/png");
-        const sliceDisplayHeight = sourceSliceHeight * ratio;
-
-        pdf.addImage(
-          sliceData,
-          "PNG",
-          margin,
-          margin,
-          contentWidth,
-          sliceDisplayHeight
-        );
-
-        yOffset += contentHeight;
-        page++;
-      }
-
-      const filename = analysisData?.story_idea
-        ? `story-flow-${analysisData.story_idea.slice(0, 30).replace(/[^a-zA-Z0-9]+/g, "-").toLowerCase()}.pdf`
-        : "story-flow-results.pdf";
-
-      pdf.save(filename);
+      generateStoryPdf(analysisData);
     } catch (err) {
       console.error("PDF generation failed:", err);
     } finally {
       setIsGeneratingPdf(false);
     }
-  }, [analysisData?.story_idea]);
+  }, [analysisData]);
 
   if (!analysisData) {
     return null;
@@ -384,8 +299,7 @@ export default function ResultsDashboard({ analysisData }) {
         </button>
       </motion.div>
 
-      <div ref={contentRef} className="space-y-5">
-        {/* ---- Story Brief ---- */}
+      {/* ---- Story Brief ---- */}
       <motion.section
         variants={itemVariants}
         className="rounded-xl border border-white/10 bg-white/5 p-5 backdrop-blur-lg"
@@ -430,7 +344,6 @@ export default function ResultsDashboard({ analysisData }) {
         optimizationReport={optimizationReport}
         variants={itemVariants}
       />
-      </div>
     </motion.div>
   );
 }
