@@ -229,6 +229,12 @@ async def analyze_story_stream(
     - ``event: thinking`` — fired when the LLM emits a thinking/reasoning
       chunk.  Payload: ``{"node": "<name>", "text": "<thinking content>"}``
 
+    - ``event: node_insight`` — fired when a pipeline node produces a
+      reasoning/feedback field of interest.  Payload:
+      ``{"field": "<state_key>.<attr>", "label": "<friendly label>", "text": "<content>"}``
+      Currently emits for: ``input_classification.reasoning``,
+      ``story_validation.feedback``, ``final_validation.replan_instructions``.
+
     - ``event: complete`` — fired once after the entire pipeline finishes.
       Payload: the full ``AnalyzeResponse`` JSON.
 
@@ -249,6 +255,22 @@ async def analyze_story_stream(
 
     async def event_stream() -> AsyncIterator[str]:
         final_state: dict | None = None
+        # Track the last emitted value for each insight field so we only
+        # emit when the value actually changes (handles revision loops
+        # where a field gets updated across iterations).
+        _last_insight_values: dict[str, str] = {}
+
+        # Map of state field -> (attribute to extract, friendly label)
+        _INSIGHT_FIELDS: list[tuple[str, str, str]] = [
+            # (state_key, attribute_name, display_label)
+            ("input_classification", "reasoning", "Input Classification Reasoning"),
+            ("story_validation", "feedback", "Story Validation Feedback"),
+            (
+                "final_validation",
+                "replan_instructions",
+                "Final Validation Replan Instructions",
+            ),
+        ]
 
         try:
             async for mode, chunk in _graph.astream(
@@ -301,6 +323,37 @@ async def analyze_story_stream(
                 elif mode == "values":
                     # Keep the latest full state snapshot.
                     final_state = chunk
+
+                    # Emit node_insight events for specific state fields
+                    # that provide useful reasoning/feedback to the user.
+                    for state_key, attr_name, label in _INSIGHT_FIELDS:
+                        insight_id = f"{state_key}.{attr_name}"
+
+                        model = chunk.get(state_key)
+                        if model is None:
+                            continue
+
+                        value = (
+                            getattr(model, attr_name, None)
+                            if hasattr(model, attr_name)
+                            else None
+                        )
+                        if not value:
+                            continue
+
+                        # Only emit if the value is new or changed (handles revision loops).
+                        if _last_insight_values.get(insight_id) == value:
+                            continue
+
+                        _last_insight_values[insight_id] = value
+                        event_data = json.dumps(
+                            {
+                                "field": insight_id,
+                                "label": label,
+                                "text": value,
+                            }
+                        )
+                        yield f"event: node_insight\ndata: {event_data}\n\n"
 
         except Exception:
             logger.exception(

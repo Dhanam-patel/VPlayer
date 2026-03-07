@@ -40,6 +40,7 @@ export function useStoryFlowStream() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [activeNode, setActiveNode] = useState("");
   const [rawThoughts, setRawThoughts] = useState("");
+  const [nodeInsights, setNodeInsights] = useState({});
   const [analysisData, setAnalysisData] = useState(null);
   const [error, setError] = useState("");
   const [completedSteps, setCompletedSteps] = useState(0);
@@ -96,6 +97,19 @@ export function useStoryFlowStream() {
       return;
     }
 
+    if (eventType === "node_insight") {
+      const field = payload?.field || "unknown";
+      const label = payload?.label || field;
+      const text = payload?.text || "";
+      if (text) {
+        setNodeInsights((prev) => ({
+          ...prev,
+          [field]: { label, text },
+        }));
+      }
+      return;
+    }
+
     if (eventType === "complete") {
       setAnalysisData(normalizeAnalyzePayload(payload));
       setError("");
@@ -145,6 +159,7 @@ export function useStoryFlowStream() {
     setError("");
     setAnalysisData(null);
     setRawThoughts("");
+    setNodeInsights({});
     setActiveNode("Starting analysis...");
     setIsStreaming(true);
     setCompletedSteps(0);
@@ -202,6 +217,7 @@ export function useStoryFlowStream() {
     isStreaming,
     activeNode,
     rawThoughts,
+    nodeInsights,
     analysisData,
     error,
     completedSteps,
