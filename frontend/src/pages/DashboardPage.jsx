@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, FileJson, Sparkles } from "lucide-react";
 import StoryForm from "../components/StoryForm";
@@ -7,10 +7,10 @@ import { mockAnalysisData } from "../mockData";
 import { useStoryFlowStream } from "../hooks/useStoryFlowStream";
 
 export default function DashboardPage() {
-  const [story_idea, setStoryIdea] = useState(mockAnalysisData.story_idea);
-  const [genre, setGenre] = useState("Mystery Thriller");
-  const [tone, setTone] = useState("Dark, Suspenseful");
-  const [target_audience, setTargetAudience] = useState("18-34 streaming audience");
+  const [story_idea, setStoryIdea] = useState("");
+  const [genre, setGenre] = useState("");
+  const [tone, setTone] = useState("");
+  const [target_audience, setTargetAudience] = useState("");
   const [episode_count_preference, setEpisodeCountPreference] = useState(6);
   const [max_revisions, setMaxRevisions] = useState(2);
 
@@ -24,6 +24,15 @@ export default function DashboardPage() {
     totalSteps,
     startStream,
   } = useStoryFlowStream();
+
+  const thoughtsRef = useRef(null);
+
+  useEffect(() => {
+    const el = thoughtsRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [rawThoughts]);
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -142,9 +151,9 @@ export default function DashboardPage() {
             {/* ---- Live Notes ---- */}
             <div className="rounded-xl border border-white/10 bg-black/30 p-4">
               <p className="mb-2 text-xs uppercase tracking-[0.15em] text-slate-400">
-                Live Notes
+                Live Thoughts
               </p>
-              <pre className="max-h-[360px] overflow-auto whitespace-pre-wrap text-sm text-slate-200">
+              <pre ref={thoughtsRef} className="max-h-[360px] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] whitespace-pre-wrap text-sm text-slate-200">
                 {rawThoughts || "Waiting for thoughts stream..."}
               </pre>
             </div>

@@ -47,11 +47,8 @@ export default function App() {
               <Sparkles className="h-4 w-4 text-cyan-300" />
             </span>
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                StoryFlow
-              </p>
               <h1 className="bg-gradient-to-r from-cyan-300 via-blue-300 to-purple-300 bg-clip-text text-xl font-semibold text-transparent">
-                Creator Demo Space
+                StoryFlow
               </h1>
             </div>
           </div>

@@ -31,12 +31,11 @@ export default function HomePage({ onGoDashboard, onGoAnalysis }) {
         <p className="text-xs uppercase tracking-[0.2em] text-cyan-200/85">
           Welcome to StoryFlow
         </p>
-        <h1 className="mt-3 max-w-4xl bg-gradient-to-r from-cyan-200 via-blue-200 to-purple-200 bg-clip-text text-4xl font-semibold leading-tight text-transparent sm:text-5xl">
-          Turn rough story sparks into binge-worthy episodic arcs.
+        <h1 className="mt-3 max-w-4xl bg-gradient-to-r from-cyan-200 via-blue-200 to-purple-200 bg-clip-text text-4xl font-semibold leading-tight text-transparent sm:text-5xl pb-2">
+          Turn story ideas into structured, binge-worthy episodic arcs.
         </h1>
         <p className="mt-4 max-w-2xl text-white/75">
-          This is a demo-ready experience with mock data, so you can walk people
-          through StoryFlow without waiting on backend responses.
+          StoryFlow helps creators transform simple ideas into structured episodic story arcs, complete with pacing insights, narrative beats, and audience-driven storytelling guidance.
         </p>
 
         <div className="mt-7 flex flex-wrap gap-3">

@@ -22,6 +22,33 @@ export default function OptimizationReport({ optimizationReport = {}, variants }
     ? optimizationReport.per_episode_suggestions
     : [];
 
+  // Group suggestions by episode_number so each episode gets a single accordion
+  const groupedSuggestions = [];
+  const episodeMap = new Map();
+  for (const entry of perEpisodeSuggestions) {
+    const epNum = entry?.episode_number ?? null;
+    const key = epNum != null ? epNum : "general";
+    if (!episodeMap.has(key)) {
+      const group = { key, episodeNumber: epNum, suggestions: [] };
+      episodeMap.set(key, group);
+      groupedSuggestions.push(group);
+    }
+    const text = entry?.suggestion || entry?.notes || JSON.stringify(entry);
+    episodeMap.get(key).suggestions.push(text);
+  }
+
+  // Sort: general (0 or null) first, then by episode number
+  groupedSuggestions.sort((a, b) => {
+    const aNum = typeof a.episodeNumber === "number" && a.episodeNumber > 0 ? a.episodeNumber : 0;
+    const bNum = typeof b.episodeNumber === "number" && b.episodeNumber > 0 ? b.episodeNumber : 0;
+    return aNum - bNum;
+  });
+
+  function episodeLabel(epNum) {
+    if (epNum == null || epNum === 0) return "General Suggestions";
+    return `Episode ${epNum}`;
+  }
+
   return (
     <motion.section
       variants={variants}
@@ -67,36 +94,38 @@ export default function OptimizationReport({ optimizationReport = {}, variants }
 
         <div>
           <h4 className="text-sm font-semibold uppercase tracking-[0.13em] text-white/75">
-            Per Episode Suggestions
+            Episode Suggestions
           </h4>
 
-          {perEpisodeSuggestions.length === 0 ? (
+          {groupedSuggestions.length === 0 ? (
             <p className="mt-2 text-sm text-white/60">No episode-specific suggestions.</p>
           ) : (
             <div className="mt-3 space-y-2">
-              {perEpisodeSuggestions.map((entry, index) => {
-                const title =
-                  entry?.episode_title ||
-                  `Episode ${entry?.episode_number ?? index + 1}`;
-                const body = entry?.suggestion || entry?.notes || JSON.stringify(entry);
-                const isOpen = openSuggestion === index;
+              {groupedSuggestions.map((group) => {
+                const title = episodeLabel(group.episodeNumber);
+                const isOpen = openSuggestion === group.key;
 
                 return (
                   <div
-                    key={`suggestion-${index}`}
+                    key={`suggestion-${group.key}`}
                     className="overflow-hidden rounded-lg border border-white/10 bg-black/20"
                   >
                     <button
                       type="button"
-                      onClick={() => setOpenSuggestion(isOpen ? null : index)}
+                      onClick={() => setOpenSuggestion(isOpen ? null : group.key)}
                       className="flex w-full items-center justify-between gap-3 px-3 py-2 text-left"
                     >
                       <span className="text-sm font-medium text-white/85">{title}</span>
-                      <ChevronDown
-                        className={`h-4 w-4 text-white/60 transition ${
-                          isOpen ? "rotate-180" : "rotate-0"
-                        }`}
-                      />
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-white/50">
+                          {group.suggestions.length}
+                        </span>
+                        <ChevronDown
+                          className={`h-4 w-4 text-white/60 transition ${
+                            isOpen ? "rotate-180" : "rotate-0"
+                          }`}
+                        />
+                      </div>
                     </button>
 
                     <AnimatePresence initial={false}>
@@ -107,8 +136,22 @@ export default function OptimizationReport({ optimizationReport = {}, variants }
                           exit={{ height: 0, opacity: 0 }}
                           transition={{ duration: 0.22, ease: "easeOut" }}
                         >
-                          <div className="border-t border-white/10 px-3 py-2 text-sm text-white/75">
-                            {body}
+                          <div className="border-t border-white/10 px-3 py-2">
+                            {group.suggestions.length === 1 ? (
+                              <p className="text-sm text-white/75">{group.suggestions[0]}</p>
+                            ) : (
+                              <ul className="space-y-1.5">
+                                {group.suggestions.map((text, i) => (
+                                  <li
+                                    key={`${group.key}-${i}`}
+                                    className="flex items-start gap-2 text-sm text-white/75"
+                                  >
+                                    <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-white/40" />
+                                    <span>{text}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </div>
                         </motion.div>
                       )}
